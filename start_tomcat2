@@ -1,0 +1,59 @@
+#!/bin/bash
+
+
+startup_tomcat() {
+local required_cmds=(jps grep ps kill)
+
+
+#check if we have the required tools
+for cmd in "${required_cmds[@]}"; do
+which $cmd > /dev/null 2>&1 || {
+echo "ERROR: $cmd command not found! Maybe you need to set PATH env variable?"
+return 1
+}
+done
+
+
+# check if catalina_home is set
+if [ "${catalina_home}none" == "none" ]; then
+echo "ERROR: Please set catalina_home env variable! Aborting..."
+return 1
+fi
+
+
+local tomcat_jps="$(jps -l | grep $1)"
+local tomcat_pid="${tomcat_jps%% *}"
+
+
+#checking if tomcat PID was found for passed in process name
+if [ "${tomcat_pid}none" == "none" ]; then
+echo "INFO: Catalina PID for process name $1 not found! Proceed with the Tomcat start..."
+
+
+sudo /etc/init.d/tomcat start
+sed '/^INFO: Server startup/q' <(tail -n 0 -f /var/log/tomcat/catalina.out)
+return 1
+
+
+# #executing the shutdown script
+# $tomcat_shutdown_script
+
+
+fi
+
+
+echo "INFO: Tomcat is already running... Please run the Stop Tomcat script to stop apache first..."
+}
+
+
+start_tomcat() {
+catalina_home=/opt/tomcat/
+tomcat_process_name=catalina
+#call the shutdown tomcat function passing in the tomcat_process variable as an argument
+startup_tomcat $tomcat_process_name
+}
+
+
+start_tomcat
+exit $?
+(END)
