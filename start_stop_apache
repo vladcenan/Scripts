@@ -1,0 +1,66 @@
+#
+# Apache Start Stop Script
+#
+# description: Control Apache
+
+
+## exit 0 -> SUCCESS
+## exit 1 -> httpd.conf was not found
+## exit 2 -> Apache is already running
+## exit 3 -> Apache is not running
+## exit 4 -> start stop restart <-> options
+
+
+
+apache_conf="/etc/httpd/conf/httpd.conf"
+http_pid="/var/run/httpd/httpd.pid"
+
+
+if [ ! -f $apache_conf ]
+then
+echo "httpd.conf was not found. Maybe Apache is not installed? "
+exit 1
+fi
+
+
+case "$1" in
+'start')
+if [ -f $http_pid ]
+then
+echo "Apache is already running... Abording..."
+exit 2
+else
+status=`service apache2 status`
+if [[ "$status" == "httpd.worker is stopped" ]]; then
+echo "Apache is not STOPPED... I will start Apache now..."
+sudo service apache2 start
+exit 0
+fi
+fi
+;;
+
+
+'stop')
+if [ -f $http_pid ]
+then
+echo "Apache is running... I will STOP Apache now..."
+sudo service apache2 stop
+exit 0
+else
+echo "Apache is already STOPPED!!!"
+exit 3
+fi
+;;
+
+'restart')
+$0 stop
+sleep 3
+$0 start
+exit 0
+;;
+
+*)
+echo "Usage: $0 { start | stop | restart }"
+exit 4
+;;
+esac
